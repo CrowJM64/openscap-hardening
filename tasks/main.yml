@@ -7,7 +7,7 @@
       - scap-security-guide
       - lynx
     state: latest
-  when: ansible_os_family == "RedHat"
+  when: ansible_facts['os_family'] == "RedHat" or ansible_facts['distribution'] == "Amazon"
   register: openscap_installed
 
 - name: Evaluate OpenSCAP Changes (RL10)
@@ -15,8 +15,7 @@
     cmd: oscap xccdf eval --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-rl10-ds.xml
     executable: /bin/bash
   when: 
-    - ansible_distribution == "Rocky"
-    - ansible_distribution_major_version == "10"
+    - ansible_facts['distribution'] == "Rocky" and ansible_facts['distribution_major_version'] == "10"
     - openscap_installed is succeeded
   register: openscap_evaluated
   changed_when: false
@@ -28,8 +27,7 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-rl9-ds.xml
   when:
-    - ansible_distribution == "Rocky"
-    - ansible_distribution_major_version == "9"
+    - ansible_facts['distribution'] == "Rocky" and ansible_facts['distribution_major_version'] == "9"
     - openscap_installed is succeeded
   register: openscap_evaluated
   changed_when: false
@@ -42,8 +40,7 @@
     cmd: oscap xccdf eval --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-cs10-ds.xml
     executable: /bin/bash
   when:
-    - ansible_distribution == "CentOS"
-    - ansible_distribution_major_version == "10"
+    - ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "10"
     - openscap_installed is succeeded
   register: openscap_evaluated
   changed_when: false
@@ -55,8 +52,7 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-cs9-ds.xml
   when:
-    - ansible_distribution == "CentOS"
-    - ansible_distribution_major_version == "9"
+    - ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "9"
     - openscap_installed is succeeded
   register: openscap_evaluated
   changed_when: false
@@ -68,8 +64,7 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-almalinux10-ds.xml
   when:
-    - ansible_distribution == "AlmaLinux"
-    - ansible_distribution_major_version == "10"
+    - ansible_facts['distribution'] == "AlmaLinux" and ansible_facts['distribution_major_version'] == "10"
     - openscap_installed is succeeded
   register: openscap_evaluated
   changed_when: false
@@ -81,8 +76,7 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-almalinux9-ds.xml
   when:
-    - ansible_distribution == "AlmaLinux"
-    - ansible_distribution_major_version == "9"
+    - ansible_facts['distribution'] == "AlmaLinux" and ansible_facts['distribution_major_version'] == "9"
     - openscap_installed is succeeded
   register: openscap_evaluated
   changed_when: false
@@ -94,8 +88,7 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --profile "{{ oracle_cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-ol10-ds.xml
   when:
-    - ansible_distribution == "OracleLinux"
-    - ansible_distribution_major_version == "10"
+    - ansible_facts['distribution'] == "OracleLinux" and ansible_facts['distribution_major_version'] == "10"
     - openscap_installed is succeeded
   register: openscap_evaluated
   changed_when: false
@@ -107,8 +100,7 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --profile "{{ oracle_cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-ol9-ds.xml
   when:
-    - ansible_distribution == "OracleLinux"
-    - ansible_distribution_major_version == "9"
+    - ansible_facts['distribution'] == "OracleLinux" and ansible_facts['distribution_major_version'] == "9"
     - openscap_installed is succeeded
   register: openscap_evaluated
   changed_when: false
@@ -120,7 +112,31 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-fedora-ds.xml
   when:
-    - ansible_distribution == "Fedora"
+    - ansible_facts['distribution'] == "Fedora"
+    - openscap_installed is succeeded
+  register: openscap_evaluated
+  changed_when: false
+  failed_when:
+    - openscap_evaluated.rc != 0
+    - openscap_evaluated.rc != 2
+
+- name: Evaluate OpenSCAP Changes (AmazonLinux2027)
+  ansible.builtin.shell:
+    cmd: oscap xccdf eval --profile "{{ amazon_cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-al2027-ds.xml
+  when:
+    - ansible_facts['distribution'] == "Amazon" and ansible_facts['distribution_major_version'] == "2027"
+    - openscap_installed is succeeded
+  register: openscap_evaluated
+  changed_when: false
+  failed_when:
+    - openscap_evaluated.rc != 0
+    - openscap_evaluated.rc != 2
+
+- name: Evaluate OpenSCAP Changes (AmazonLinux2023)
+  ansible.builtin.shell:
+    cmd: oscap xccdf eval --profile "{{ amazon_cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-al2023-ds.xml
+  when:
+    - ansible_facts['distribution'] == "Amazon" and ansible_facts['distribution_major_version'] == "2023"
     - openscap_installed is succeeded
   register: openscap_evaluated
   changed_when: false
@@ -133,13 +149,9 @@
     cmd: oscap xccdf eval --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-rhel10-ds.xml
     executable: /bin/bash
   when:
-    - ansible_distribution != "Rocky"
-    - ansible_distribution != "CentOS"
-    - ansible_distribution != "OracleLinux"
-    - ansible_distribution != "AlmaLinux"
-    - ansible_distribution != "Fedora"
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "10"
+    - ansible_facts['os_family'] == "RedHat"
+    - ansible_facts['distribution'] not in ["Rocky", "CentOS", "OracleLinux", "AlmaLinux", "Amazon"]
+    - ansible_facts['distribution_major_version'] == "10"
     - openscap_installed is succeeded
   register: openscap_evaluated
   changed_when: false
@@ -151,13 +163,9 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml
   when:
-    - ansible_distribution != "Rocky"
-    - ansible_distribution != "CentOS"
-    - ansible_distribution != "OracleLinux"
-    - ansible_distribution != "AlmaLinux"
-    - ansible_distribution != "Fedora"
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "9"
+    - ansible_facts['os_family'] == "RedHat"
+    - ansible_facts['distribution'] not in ["Rocky", "CentOS", "OracleLinux", "AlmaLinux", "Amazon"]
+    - ansible_facts['distribution_major_version'] == "9"
     - openscap_installed is succeeded
   register: openscap_evaluated
   changed_when: false
@@ -169,19 +177,17 @@
   ansible.builtin.shell:
     cmd: oscap xccdf generate report --output "{{ report_location }}" /root/openscap_hardening_results.xml
   when: 
-    - ansible_os_family == "RedHat"
+    - ansible_facts['os_family'] == "RedHat"
     - openscap_evaluated is succeeded
-  register: openscap_reported
+  register: openscap_evaluated
   changed_when: false
 
 - name: Remediate OpenSCAP Findings (RL10)
   ansible.builtin.shell:
     cmd: oscap xccdf eval --remediate --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-rl10-ds.xml
   when:
-    - ansible_distribution == "Rocky"
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "10"
-    - openscap_reported is succeeded
+    - ansible_facts['distribution'] == "Rocky" and ansible_facts['distribution_major_version'] == "10"
+    - openscap_evaluated is succeeded
   register: openscap_remediated
   changed_when: false
   failed_when:
@@ -192,10 +198,8 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --remediate --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-rl9-ds.xml
   when:
-    - ansible_distribution == "Rocky"
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "9"
-    - openscap_reported is succeeded
+    - ansible_facts['distribution'] == "Rocky" and ansible_facts['distribution_major_version'] == "9"
+    - openscap_evaluated is succeeded
   register: openscap_remediated
   changed_when: false
   failed_when:
@@ -206,10 +210,8 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --remediate --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-cs10-ds.xml
   when:
-    - ansible_distribution == "CentOS"
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "10"
-    - openscap_reported is succeeded
+    - ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "10"
+    - openscap_evaluated is succeeded
   register: openscap_remediated
   changed_when: false
   failed_when:
@@ -220,10 +222,8 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --remediate --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-cs9-ds.xml
   when:
-    - ansible_distribution == "CentOS"
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "9"
-    - openscap_reported is succeeded
+    - ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] == "9"
+    - openscap_evaluated is succeeded
   register: openscap_remediated
   changed_when: false
   failed_when:
@@ -234,10 +234,8 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --remediate --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-almalinux10-ds.xml
   when:
-    - ansible_distribution == "AlmaLinux"
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "10"
-    - openscap_reported is succeeded
+    - ansible_facts['distribution'] == "AlmaLinux" and ansible_facts['distribution_major_version'] == "10"
+    - openscap_evaluated is succeeded
   register: openscap_remediated
   changed_when: false
   failed_when:
@@ -248,10 +246,8 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --remediate --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-almalinux9-ds.xml
   when:
-    - ansible_distribution == "AlmaLinux"
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "9"
-    - openscap_reported is succeeded
+    - ansible_facts['distribution'] == "AlmaLinux" and ansible_facts['distribution_major_version'] == "9"
+    - openscap_evaluated is succeeded
   register: openscap_remediated
   changed_when: false
   failed_when:
@@ -262,10 +258,8 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --remediate --profile "{{ oracle_cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-ol10-ds.xml
   when:
-    - ansible_distribution == "OracleLinux"
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "10"
-    - openscap_reported is succeeded
+    - ansible_facts['distribution'] == "OracleLinux" and ansible_facts['distribution_major_version'] == "10"
+    - openscap_evaluated is succeeded
   register: openscap_remediated
   changed_when: false
   failed_when:
@@ -276,10 +270,8 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --remediate --profile "{{ oracle_cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-ol9-ds.xml
   when:
-    - ansible_distribution == "OracleLinux"
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "9"
-    - openscap_reported is succeeded
+    - ansible_facts['distribution'] == "OracleLinux" and ansible_facts['distribution_major_version'] == "9"
+    - openscap_evaluated is succeeded
   register: openscap_remediated
   changed_when: false
   failed_when:
@@ -290,7 +282,31 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --remediate --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-fedora-ds.xml
   when:
-    - ansible_distribution == "Fedora"
+    - ansible_facts['distribution'] == "Fedora"
+    - openscap_installed is succeeded
+  register: openscap_evaluated
+  changed_when: false
+  failed_when:
+    - openscap_evaluated.rc != 0
+    - openscap_evaluated.rc != 2
+
+- name: Remediate OpenSCAP Findings (AmazonLinux2027)
+  ansible.builtin.shell:
+    cmd: oscap xccdf eval --remediate --profile "{{ amazon_cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-al2027-ds.xml
+  when:
+    - ansible_facts['distribution'] == "Amazon" and ansible_facts['distribution_major_version'] == "2027"
+    - openscap_installed is succeeded
+  register: openscap_evaluated
+  changed_when: false
+  failed_when:
+    - openscap_evaluated.rc != 0
+    - openscap_evaluated.rc != 2
+
+- name: Remediate OpenSCAP Findings (AmazonLinux2023)
+  ansible.builtin.shell:
+    cmd: oscap xccdf eval --remediate --profile "{{ amazon_cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-al2023-ds.xml
+  when:
+    - ansible_facts['distribution'] == "Amazon" and ansible_facts['distribution_major_version'] == "2023"
     - openscap_installed is succeeded
   register: openscap_evaluated
   changed_when: false
@@ -302,14 +318,10 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --remediate --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-rhel10-ds.xml
   when:
-    - ansible_distribution != "Rocky"
-    - ansible_distribution != "CentOS"
-    - ansible_distribution != "OracleLinux"
-    - ansible_distribution != "AlmaLinux"
-    - ansible_distribution != "Fedora"
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "10"
-    - openscap_reported is succeeded
+    - ansible_facts['os_family'] == "RedHat"
+    - ansible_facts['distribution'] not in ["Rocky", "CentOS", "OracleLinux", "AlmaLinux", "RedHat"]
+    - ansible_facts['distribution_major_version'] == "10"
+    - openscap_evaluated is succeeded
   register: openscap_remediated
   changed_when: false
   failed_when:
@@ -320,14 +332,10 @@
   ansible.builtin.shell:
     cmd: oscap xccdf eval --remediate --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-rhel9-ds.xml
   when:
-    - ansible_distribution != "Rocky"
-    - ansible_distribution != "CentOS"
-    - ansible_distribution != "OracleLinux"
-    - ansible_distribution != "AlmaLinux"
-    - ansible_distribution != "Fedora"
-    - ansible_os_family == "RedHat"
-    - ansible_distribution_major_version == "9"
-    - openscap_reported is succeeded
+    - ansible_facts['os_family'] == "RedHat"
+    - ansible_facts['distribution'] not in ["Rocky", "CentOS", "OracleLinux", "AlmaLinux", "RedHat"]
+    - ansible_facts['distribution_major_version'] == "10"
+    - openscap_evaluated is succeeded
   register: openscap_remediated
   changed_when: false
   failed_when:
@@ -338,4 +346,8 @@
   ansible.builtin.file:
     path: /root/openscap_hardening_results.xml
     state: absent
-  ignore_errors: true
+
+- name: OpenSCAP Report Lockdown
+  ansible.builtin.file:
+    path: "{{ report_location }}"
+    mode: '0400'

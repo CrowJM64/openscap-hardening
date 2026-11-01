@@ -1,0 +1,8 @@
+---
+# Purpose: install what a real server would already have (the base images ship without sshd).
+# Molecule calls this playbook with `molecule prepare`.
+- name: Prepare
+  hosts: all
+  gather_facts: true
+
+#  tasks:

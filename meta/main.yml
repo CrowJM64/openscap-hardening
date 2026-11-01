@@ -1,7 +1,8 @@
 galaxy_info:
   author: Josh Murphy
-  description: System File Hardening using Ansible.
-  company: ""
+  namespace: crowjm64
+  role_name: openscap_hardening
+  description: OpenScap Hardening using Ansible.
   license: MIT
   min_ansible_version: 2.1
 
@@ -19,6 +20,9 @@ galaxy_info:
     - name: AlmaLinux
       versions:
         - all
+    - name: Amazon
+      versions:
+        - 2027,2023
 
   galaxy_tags:
     - ansible

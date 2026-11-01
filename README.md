@@ -3,15 +3,14 @@
 
 ## Overview
 
-This Ansible role automates hardening of RedHat Distros to the CIS Server Level 2 Benchmark using OpenSCAP:
+This Ansible role automates hardening of RedHat distros and derivatives to the CIS Server Level 2 Benchmark using OpenSCAP:
 
 ## Tested Platforms and Derivatives
 ```yaml
-# RedHat
-Rocky Linux - 10/9
-CentOS Stream - 10/9
-Fedora 43/42
-RHEL - 10/9
+Rocky 10,9
+Fedora 44,43
+Oracle 10,9
+AmazonLinux 2027,2023
 ```
 
 ## Example Playbook
