@@ -10,19 +10,32 @@ galaxy_info:
   platforms:
     - name: EL
       versions:
-        - all
+        - "10"
+        - "9"
     - name: Fedora
       versions:
-        - all
+        - "44"
+        - "43"
     - name: Rocky
       versions:
-        - all
+        - "10"
+        - "9"
     - name: AlmaLinux
       versions:
-        - all
+        - "10"
+        - "9"
     - name: Amazon
       versions:
-        - 2027,2023
+        - "2027"
+        - "2023"
+    - name: Debian
+      versions:
+        - "13"
+        - "12"
+    - name: Ubuntu
+      versions:
+        - "13"
+        - "12"
 
   galaxy_tags:
     - ansible

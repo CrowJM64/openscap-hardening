@@ -1,6 +1,11 @@
 ---
 # RHEL OpenSCAP Hardening
-- name: Installing OpenSCAP, Security Guides and Lynx
+## Pre-req installation tasks
+- name: Show OS information
+  ansible.builtin.debug:
+    msg: "OS: {{ ansible_os_family }} {{ ansible_distribution }} {{ ansible_distribution_major_version }}"
+
+- name: Installing OpenSCAP, Security Guides and Lynx (RedHat)
   ansible.builtin.package:
     name:
       - openscap-scanner
@@ -10,6 +15,33 @@
   when: ansible_facts['os_family'] == "RedHat" or ansible_facts['distribution'] == "Amazon"
   register: openscap_installed
 
+- name: Installing OpenSCAP, Security Guides and Lynx (Debian13+Ubuntu26)
+  ansible.builtin.package:
+    name:
+      - libopenscap33
+      - openscap-scanner
+      - lynx
+    state: latest
+    update_cache: true
+    cache_valid_time: 3600
+  when:
+    - (ansible_facts['distribution'] == "Debian" and ansible_facts['distribution_major_version'] == "13") or (ansible_facts['distribution'] == "Ubuntu" and ansible_facts['distribution_major_version'] == "26")
+  register: openscap_installed
+
+- name: Installing OpenSCAP, Security Guides and Lynx (Debian12+Ubuntu24)
+  ansible.builtin.package:
+    name:
+      - libopenscap25
+      - openscap-scanner
+      - lynx
+    state: latest
+    update_cache: true
+    cache_valid_time: 3600
+  when:
+   - (ansible_facts['distribution'] == "Debian" and ansible_facts['distribution_major_version'] == "12") or (ansible_facts['distribution'] == "Ubuntu" and ansible_facts['distribution_major_version'] == "24")
+  register: openscap_installed
+
+## Redhat OpenScap Evaluation
 - name: Evaluate OpenSCAP Changes (RL10)
   ansible.builtin.shell:
     cmd: oscap xccdf eval --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/ssg-rl10-ds.xml
@@ -173,15 +205,104 @@
     - openscap_evaluated.rc != 0
     - openscap_evaluated.rc != 2
 
+## Debian OpenSCAP Hardening
+- name: Check if SSG Guides folder exists (Debian)
+  stat:
+    path: /usr/share/xml/scap/ssg/content/
+  register: ssg_guide_info
+  when: 
+    - ansible_facts['os_family'] == "Debian"
+
+- name: Create SSG Guides folder (Debian)
+  ansible.builtin.file:
+    path: /usr/share/xml/scap/ssg/content/
+    state: directory
+    mode: '0755'
+  when: 
+    - ansible_facts['os_family'] == "Debian"
+    - not ssg_guide_info.stat.exists
+
+- name: Download SCAP Security Guides (Debian)
+  ansible.builtin.get_url:
+    url: https://github.com/ComplianceAsCode/content/releases/download/v0.1.82/scap-security-guide-0.1.82.tar.gz
+    dest: /root/scap-security-guide-0.1.82.tar.gz
+    mode: '0500'
+  when: 
+    - ansible_facts['os_family'] == "Debian"
+
+- name: Extract security guides
+  ansible.builtin.unarchive:
+    src: /root/scap-security-guide-0.1.82.tar.gz
+    dest: /usr/share/xml/scap/ssg/content/
+    remote_src: true
+  when: 
+    - ansible_facts['os_family'] == "Debian"
+    - not ssg_guide_info.stat.exists
+
+- name: Evaluate OpenSCAP Changes (Debian13)
+  ansible.builtin.shell:
+    cmd: oscap xccdf eval --profile "{{ debian_cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/scap-security-guide-0.1.82/ssg-debian13-ds.xml
+  when: 
+    - ansible_facts['distribution'] == "Debian" and ansible_facts['distribution_major_version'] == "13"
+    - openscap_installed is succeeded
+  register: openscap_evaluated
+  changed_when: false
+  failed_when:
+    - openscap_evaluated.rc != 0
+    - openscap_evaluated.rc != 2
+
+- name: Evaluate OpenSCAP Changes (Debian12)
+  ansible.builtin.shell:
+    cmd: oscap xccdf eval --profile "{{ debian_cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/scap-security-guide-0.1.82/ssg-debian12-ds.xml
+    executable: /bin/bash
+  when: 
+    - ansible_facts['distribution'] == "Debian" and ansible_facts['distribution_major_version'] == "12"
+    - openscap_installed is succeeded
+  register: openscap_evaluated
+  changed_when: false
+  failed_when:
+    - openscap_evaluated.rc != 0
+    - openscap_evaluated.rc != 2
+
+- name: Evaluate OpenSCAP Changes (Ubuntu2604)
+  ansible.builtin.shell:
+    cmd: oscap xccdf eval --profile "{{ debian_cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/scap-security-guide-0.1.82/ssg-ubuntu2604-ds.xml
+    executable: /bin/bash
+  when: 
+    - ansible_facts['distribution'] == "Ubuntu" and ansible_facts['distribution_major_version'] == "26"
+    - openscap_installed is succeeded
+  register: openscap_evaluated
+  changed_when: false
+  failed_when:
+    - openscap_evaluated.rc != 0
+    - openscap_evaluated.rc != 2
+
+- name: Evaluate OpenSCAP Changes (Ubuntu2404)
+  ansible.builtin.shell:
+    cmd: oscap xccdf eval --profile "{{ debian_cis_benchmark }}" --results /root/openscap_hardening_results.xml /usr/share/xml/scap/ssg/content/scap-security-guide-0.1.82/ssg-ubuntu2404-ds.xml
+    executable: /bin/bash
+  when: 
+    - ansible_facts['distribution'] == "Ubuntu" and ansible_facts['distribution_major_version'] == "24"
+    - openscap_installed is succeeded
+  register: openscap_evaluated
+  changed_when: false
+  failed_when:
+    - openscap_evaluated.rc != 0
+    - openscap_evaluated.rc != 2
+
+
+## Generate Needed Changes - All Distros
 - name: Generate Needed Changes Report
   ansible.builtin.shell:
     cmd: oscap xccdf generate report --output "{{ report_location }}" /root/openscap_hardening_results.xml
   when: 
-    - ansible_facts['os_family'] == "RedHat"
+    - ansible_facts['os_family'] in ["RedHat", "Debian"]
     - openscap_evaluated is succeeded
   register: openscap_evaluated
   changed_when: false
 
+
+## RedHat Remediation Tasks
 - name: Remediate OpenSCAP Findings (RL10)
   ansible.builtin.shell:
     cmd: oscap xccdf eval --remediate --profile "{{ cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/ssg-rl10-ds.xml
@@ -342,7 +463,65 @@
     - openscap_remediated.rc != 0
     - openscap_remediated.rc != 2
 
-- name: OpenSCAP Cleanup
+## Debian Remediation Tasks
+- name: Remediate OpenSCAP Findings (Debian13)
+  ansible.builtin.shell:
+    cmd: oscap xccdf eval --remediate --profile "{{ debian_cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/scap-security-guide-0.1.82/ssg-debian13-ds.xml
+  when:
+    - ansible_facts['distribution'] == "Debian"
+    - ansible_facts['distribution_major_version'] == "13"
+    - openscap_evaluated is succeeded
+  register: openscap_remediated
+  changed_when: false
+  failed_when:
+    - openscap_remediated.rc != 0
+    - openscap_remediated.rc != 2
+
+- name: Remediate OpenSCAP Findings (Debian12)
+  ansible.builtin.shell:
+    cmd: oscap xccdf eval --remediate --profile "{{ debian_cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/scap-security-guide-0.1.82/ssg-debian12-ds.xml
+  when:
+    - ansible_facts['distribution'] == "Debian"
+    - ansible_facts['distribution_major_version'] == "12"
+    - openscap_evaluated is succeeded
+  register: openscap_remediated
+  changed_when: false
+  failed_when:
+    - openscap_remediated.rc != 0
+    - openscap_remediated.rc != 2
+
+- name: Remediate OpenSCAP Findings (Ubuntu2604)
+  ansible.builtin.shell:
+    cmd: oscap xccdf eval --remediate --profile "{{ debian_cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/scap-security-guide-0.1.82/ssg-ubuntu2604-ds.xml
+  when:
+    - ansible_facts['distribution'] == "Ubuntu"
+    - ansible_facts['distribution_major_version'] == "26"
+    - openscap_evaluated is succeeded
+  register: openscap_remediated
+  changed_when: false
+  failed_when:
+    - openscap_remediated.rc != 0
+    - openscap_remediated.rc != 2
+
+- name: Remediate OpenSCAP Findings (Ubuntu2404)
+  ansible.builtin.shell:
+    cmd: oscap xccdf eval --remediate --profile "{{ debian_cis_benchmark }}" --results /root/openscap_hardening_results.xml --report "{{ report_location }}" /usr/share/xml/scap/ssg/content/scap-security-guide-0.1.82/ssg-ubuntu2404-ds.xml
+  when:
+    - ansible_facts['distribution'] == "Ubuntu"
+    - ansible_facts['distribution_major_version'] == "24"
+    - openscap_evaluated is succeeded
+  register: openscap_remediated
+  changed_when: false
+  failed_when:
+    - openscap_remediated.rc != 0
+    - openscap_remediated.rc != 2
+
+- name: OpenSCAP Security Guide Cleanup
+  ansible.builtin.file:
+    path: /root/scap-security-guide-0.1.82.tar.gz
+    state: absent
+
+- name: OpenSCAP Evaluation Report Cleanup
   ansible.builtin.file:
     path: /root/openscap_hardening_results.xml
     state: absent
